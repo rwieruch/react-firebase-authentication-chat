@@ -11,6 +11,7 @@ class HomePage extends Component {
     this.state = {
       value: '',
       messages: [],
+      users: {},
     };
 
     this.onAddMessage = this.onAddMessage.bind(this);
@@ -18,6 +19,10 @@ class HomePage extends Component {
   }
 
   componentWillMount() {
+    db.onceGetUsers().then(snapshot =>
+      this.setState(() => ({ users: snapshot.val() }))
+    );
+
     db.onMessageAdded((snapshot) => {
       this.setState(prevState => ({
         messages: [ snapshot.val(), ...prevState.messages ],
@@ -42,10 +47,24 @@ class HomePage extends Component {
   }
 
   render() {
-    const { messages, value } = this.state;
+    const {
+      messages,
+      users,
+      value,
+    } = this.state;
 
     return (
       <div>
+        <ul>
+          {messages.map((message, key) =>
+            <Message
+              key={key}
+              message={message}
+              user={users[message.userId]}
+            />
+          )}
+        </ul>
+
         <form onSubmit={this.onAddMessage}>
           <input
             type="text"
@@ -54,15 +73,17 @@ class HomePage extends Component {
           />
           <button type="submit">Send</button>
         </form>
-
-        <ul>
-          {messages.map(message =>
-            <li key={message.id}>{message.text}</li>
-          )}
-        </ul>
       </div>
     );
   }
+}
+
+const Message = ({ message, user }) => {
+  const messenger = user
+    ? `${user.username}:`
+    : '???';
+
+  return <li><strong>{messenger}</strong> {message.text}</li>;
 }
 
 HomePage.contextTypes = {
